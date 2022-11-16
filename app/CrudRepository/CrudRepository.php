@@ -56,12 +56,30 @@ class CrudRepository
      * @return callable
      */
     public function filters($filters): callable
-    {
+    { 
         return function (Builder $query) use ($filters) {
             $query->where(function (Builder $query) use ($filters) {
                 foreach ($filters as $filter) {
                     ['field' => $field, 'value' => $value, 'operator' => $operator] = $filter;
-                    $query->where($field, $operator, $value);
+                    if ($value && $operator === '=') {
+                        $query->where($field, $value);
+                    }
+
+                    if ($value && $operator === 'like') {
+                        $query->where($field, 'LIKE', '%'. $value. '%');
+                    }
+
+                    if ($value && (is_array($value) && $operator === 'in')) {
+                        $query->whereIn($field, $value);
+                    }
+
+                    if ($value && (is_array($value) && $operator === 'between')) {
+                        $query->whereBetween($field, $value);
+                    }
+
+                    if ($value && $operator === 'date') {
+                        $query->whereDate($field, $value);
+                    }
                 }
             });
         };
@@ -82,17 +100,6 @@ class CrudRepository
     }
 
     /**
-     * @param array $relations
-     * @return callable
-     */
-    public function getRelations($relations): callable
-    {
-        return function (Builder $query) use ($relations) {
-            $query->with($relations);
-        };
-    }
-
-    /**
      * build query before get data from database.
      * @param array $request
      * @return @return Model|Builder|QueryBuilder
@@ -101,14 +108,16 @@ class CrudRepository
     {
         $filters        = $request['filters'] ?? [];
         $select_fields  = $this->select_fields ?? [];
+        $countRelations = $request['count_relations'] ?? [];
         $relations      = $request['relations'] ?? [];
         $sorts          = $request['sorts'] ?? [];
-
+        
         return $this->model
             ->select($this->getSelectFields($select_fields))
             ->when(!empty($filters), $this->filters($filters))
-            ->when(count($sorts) > 0, $this->sorts($sorts))
-            ->when(!empty($relations), $this->getRelations($relations));
+            ->when(!empty($sorts), $this->sorts($sorts))
+            ->when(!empty($countRelations), fn (Builder $query) => $query->withCount($countRelations))
+            ->when(!empty($relations), fn (Builder $query) => $query->with($relations));
     }
 
     /**

@@ -4,15 +4,22 @@ namespace App\Modules\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Modules\Auth\Request\{AuthRequest, AuthUpdateRequest, AuthLoginRequest,AuthForgotPasswordRequest};
+use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
 
-    public function __construct(protected AuthService $authService){}
+    public function __construct(protected AuthService $authService)
+    {
+        $this->middleware('auth:api')->except(['login','store']);
+    }
+    
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return AuthResource
      */
     public function index(Request $request)
     {
@@ -23,46 +30,86 @@ class AuthController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param  Request  $request
+     * @return AuthResource
      */
     public function store(AuthRequest $request)
     {
-        // $auth = $this->authService->create($request->all());
-        // return new AuthResource($auth);
+        $data = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Bcrypt($request->password),
+        ];
+
+        $auth = $this->authService->createOne($data);
+        return new AuthResource($auth);
     }
 
     /**
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return AuthResource
      */
     public function show($id)
     {
-        //
+        $auth = $this->authService->getOneOrFail($id);
+        return new AuthResource($auth);
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return AuthResource
      */
-    public function update(Request $request, $id)
+    public function update(AuthUpdateRequest $request, $id)
     {
-        //
+        $auth = $this->authService->getOneOrFail($id);
+
+        $data = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+        ];
+        $authUpdated = $this->authService->updateOne($auth, $data);
+        return new AuthResource($authUpdated);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
+    public function login(AuthLoginRequest $request)
     {
-        //
+        $success = $this->authService->login($request->email, $request->password);
+
+        // !$success && throw ValidationException::withMessages([
+        //     'invalid' => 'Email or Password incorrect!!',
+        // ]);
+
+        abort_if(!$success, Response::HTTP_UNAUTHORIZED, 'Unauthorized');
+
+        return $success;
+    }
+
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+        $this->authService->logout($user);
+
+        return new AuthResource($user);
+    }
+
+    public function me(){
+        $user = $this->authService->me();
+        return new AuthResource($user);
+    }
+
+    public function forgotPassword(AuthForgotPasswordRequest $request){
+        $user = $this->authService->forgotPassword($request->email);
+        return $user;
+    }
+
+    public function updatePassword($token, $email){
+        $user = $this->authService->updatePassword($token, $email);
+        return $user;
     }
 }

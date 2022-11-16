@@ -25,7 +25,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $products = $this->productService->paginate($request->all());
-        return new ProductResource($products);
+        return ProductResource::collection($products);
     }
 
 

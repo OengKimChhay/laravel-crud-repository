@@ -20,7 +20,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::apiResource('auth/', AuthController::class);
+Route::controller(AuthController::class)->prefix('/auth')->group(function () {
+    Route::post('/login', 'login')->name('auth.login');
+    Route::post('/logout', 'logout')->name('auth.logout');
+    Route::get('/me', 'me')->name('auth.me');
+    Route::post('/forgot-password', 'forgotPassword')->name('auth.forgot.password');
+    Route::post('/update-password/{token}/{email}', 'updatePassword')->name('auth.update.password');
+});
+
+Route::apiResource('/auth', AuthController::class);
 
 Route::controller(ProductController::class)->prefix('/product')->group(function () {
     Route::get('/trash/{id}',           'trash')->name('product.trash');

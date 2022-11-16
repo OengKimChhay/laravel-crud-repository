@@ -8,22 +8,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Passport\HasApiTokens;
+use App\Modules\Product\Product;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Auth extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    // set up laravel passport https://laravel-guide.readthedocs.io/en/latest/passport/#:~:text=client%20%2D%2Dpassword-,Requesting%20Tokens,need%20to%20define%20it%20manually.
+    use HasApiTokens,HasFactory, Notifiable, SoftDeletes;
     protected $table = 'users';
-
-    /**
-     * Create a new factory instance for the model.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
-     */
-    protected static function newFactory()
-    {
-        return AuthFactory::new();
-    }
 
     /**
      * The attributes that are mass assignable.
@@ -55,9 +48,8 @@ class Auth extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-
-    protected function relate()
+    public function products(): HasMany
     {
-        return 'hi test';
+        return $this->hasMany(Product::class,'created_by');
     }
 }
