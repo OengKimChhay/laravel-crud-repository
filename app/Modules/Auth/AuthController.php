@@ -8,6 +8,7 @@ use App\Modules\Auth\Request\{AuthRequest, AuthUpdateRequest, AuthLoginRequest,A
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
 
+
 class AuthController extends Controller
 {
 
@@ -108,8 +109,8 @@ class AuthController extends Controller
         return $user;
     }
 
-    public function updatePassword($token, $email){
-        $user = $this->authService->updatePassword($token, $email);
+    public function updatePassword(Request $request, $token, $email){
+        $user = $this->authService->updatePassword($request->password, $token, $email);
         return $user;
     }
 }

@@ -14,7 +14,10 @@ class ExampleTest extends TestCase
      */
     public function test_the_application_returns_a_successful_response()
     {
-        $response = $this->get('/');
+        $response = $this->post('/api/auth/login',[
+            'email' => 'chihe333@gmail.com',
+            'password' =>'12345'
+        ]);
 
         $response->assertStatus(200);
     }

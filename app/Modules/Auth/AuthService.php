@@ -9,6 +9,9 @@ use App\Modules\Auth\Auth as User;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use App\Helper\Mail\MailService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
 class AuthService extends CrudRepository
 {
     protected $tokenName = 'API Personal Access Client';
@@ -18,7 +21,7 @@ class AuthService extends CrudRepository
         'email'
     ];
 
-    public function __construct(User $auth,public MailService $mailService)
+    public function __construct(User $auth, public MailService $mailService)
     {
         parent::__construct($auth);
     }
@@ -37,7 +40,7 @@ class AuthService extends CrudRepository
         }
 
         $token = $user->createToken($this->tokenName)->accessToken;
-        
+
         return [
             'access_token' => $token,
             'token_type' => 'Bearer',
@@ -76,26 +79,55 @@ class AuthService extends CrudRepository
      */
     public function forgotPassword(string $email)
     {
-        
-        $existUser = User::where('email', $email)->first();
-        $currentUserId = Auth::id();
-        abort_if(!$existUser,404,'Email does not exist');
-        abort_if($existUser->id !== $currentUserId ,403,'U cannot reset other user\'s password');
-        
-        $token = request()->bearerToken();
-        $resetLink = route('auth.update.password',['token'=>$token,'email'=>$email]);
-        
-        $mailTemplate = 'mail.send';
-        $mailData = [
-            'title' => 'Update Password',
-            'link' => $resetLink,
-            'subject' => 'Update Password'
-        ];
-        $this->mailService->sendMail($mailTemplate, $mailData, $email);
+        DB::transaction(function () use ($email) {
+            $existUser = User::where('email', $email)->first();
+            $currentUserId = Auth::id();
+            abort_if(!$existUser, 404, 'Email does not exist');
+            abort_if($existUser->id !== $currentUserId, 403, 'U cannot reset other user\'s password');
+
+            // $token = request()->bearerToken();
+            $token = Str::random(200);
+            $resetLink = route('auth.update.password', ['token' => $token, 'email' => $email]);
+
+            $mailTemplate = 'mail.send';
+            $mailData = [
+                'title' => 'Update Password',
+                'link' => $resetLink,
+                'subject' => 'Update Password'
+            ];
+            $this->mailService->sendMail($mailTemplate, $mailData, $email);
+
+            // save credentials to password_resets table
+            PasswordReset::create([
+                'email' => $email,
+                'token' => $token
+            ]);
+
+            return true;
+        });
     }
 
-    public function updatePassword($token, $email){
-        $currentToken = request()->bearerToken();
-        abort_if(!$token || $email || $currentToken !== $token ,403,'U cannot reset other user\'s password');
+    public function updatePassword(string $password, string $token, string $email)
+    { 
+        $credential = PasswordReset::where([
+            'email' => $email,
+            'token' => $token
+        ])->first();
+
+        abort_if(!$credential, 404, 'Something went wrong please try again!');
+        abort_if($credential->token !== $token || $credential->email !== Auth::user()->email, 403, 'U cannot reset other user\'s password');
+
+        DB::transaction(function () use ($password, $token, $email) {
+            $user = User::where('email', $email)->first();
+            $user->password = bcrypt($password);
+            $user->save();
+
+            PasswordReset::where([
+                'email' => $email,
+                'token' => $token
+            ])->delete();
+
+            return true;
+        });
     }
 }

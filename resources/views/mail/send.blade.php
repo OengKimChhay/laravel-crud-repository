@@ -29,8 +29,8 @@
 <body style="background:rgb(255, 232, 232);padding:100px;">
     <div class="content">
         {{-- $title come from array $mailData --}}
-        <h1 style="text-align: center;">{{ $title ?? 's' }}</h1>
-        <p style="text-align: center;">Click link to reset your password : {{ $link }}</p>
+        <h1 style="text-align: center;">{{ $title ?? '' }}</h1>
+        <p style="text-align: center;">Click <a href="{{ $link ?? ''}}"><b>link</b></a> to reset your password</p>
     </div>
 </body>
 
