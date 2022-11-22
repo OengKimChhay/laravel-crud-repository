@@ -7,14 +7,14 @@ use Illuminate\Http\Request;
 use App\Modules\Auth\Request\{AuthRequest, AuthUpdateRequest, AuthLoginRequest,AuthForgotPasswordRequest};
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
-
+use App\Modules\Auth\Event\UserRegisterEvent;
 
 class AuthController extends Controller
 {
 
     public function __construct(protected AuthService $authService)
     {
-        $this->middleware('auth:api')->except(['login','store']);
+        $this->middleware('auth:api')->except(['index','login','store']);
     }
     
     /**
@@ -25,6 +25,7 @@ class AuthController extends Controller
     public function index(Request $request)
     {
         $auth = $this->authService->paginate($request->all());
+        
         return AuthResource::collection($auth);
     }
 
@@ -43,6 +44,13 @@ class AuthController extends Controller
         ];
 
         $auth = $this->authService->createOne($data);
+
+        // send email to a new user by using event listeners
+        event(new UserRegisterEvent($auth));
+        // or u can use event dispatch method 
+        // UserRegisterEvent::dispatch($auth);
+        // UserRegisterEvent::dispatchIf($condition, $auth);
+        // or u can register event in $dispatchesEvents model attribute
         return new AuthResource($auth);
     }
 
@@ -82,11 +90,11 @@ class AuthController extends Controller
     {
         $success = $this->authService->login($request->email, $request->password);
 
-        // !$success && throw ValidationException::withMessages([
-        //     'invalid' => 'Email or Password incorrect!!',
-        // ]);
+        !$success && throw ValidationException::withMessages([
+            'invalid' => 'Email or Password incorrect!!',
+        ]);
 
-        abort_if(!$success, Response::HTTP_UNAUTHORIZED, 'Unauthorized');
+        abort_if(!$success, Response::HTTP_UNAUTHORIZED, 'Unauthorized please try again');
 
         return $success;
     }

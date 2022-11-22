@@ -18,7 +18,7 @@ class ExampleTest extends TestCase
             'email' => 'chihe333@gmail.com',
             'password' =>'12345'
         ]);
-
+        return $response;
         $response->assertStatus(200);
     }
 }

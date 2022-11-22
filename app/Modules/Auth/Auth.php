@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use App\Modules\Product\Product;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Auth extends Authenticatable
@@ -52,4 +53,34 @@ class Auth extends Authenticatable
     {
         return $this->hasMany(Product::class,'created_by');
     }
+
+    // ----------------------global scope
+    // protected static function booted()
+    // {
+    //     static::addGlobalScope('test', function (Builder $builder) {
+    //         $builder->where(['name'=>'chhay','id'=>1]);
+    //     });
+    // }
+
+    // ----------------------local scope
+    // method name must follow the cope{Scope name} pattern.
+    // to call scope method User::name('something')->...
+    // public function scopeName($query, $type)
+    // {
+    //     return $query->where('name',$type);
+    // }
+
+    // use event class inside $dispatchesEvents model attr
+    // protected $dispatchesEvents = [
+        // 'retrieved' => Event\UserRegister::class,
+        // 'creating' => Event\AuthDeleted::class,
+        // ...............................more
+    // ];
+    // or
+    // protected static function booted()
+    // {
+        // static::retrieved(function ($user) { // do something});
+        // static::creating(function ($user) {// do something});
+        // ...............................more
+    // }
 }
