@@ -4,10 +4,10 @@ namespace App\Modules\Auth\Listener;
 
 use App\Modules\Auth\Event\UserRegisterEvent;
 use Illuminate\Contracts\Queue\ShouldQueue;
-
+use App\Modules\Product\Product;
 use App\Helper\Mail\MailService;
 
-class SendEmailToNewUserListener implements ShouldQueue
+class SendEmailToNewUserListener
 {
     /**
      * Create the event listener.
