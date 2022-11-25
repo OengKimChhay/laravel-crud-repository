@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Modules\Category\Category;
 use Illuminate\Database\Seeder;
-use App\Modules\Auth\Auth;
 
-class AuthSeeder extends Seeder
+class CategorySeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -14,6 +14,6 @@ class AuthSeeder extends Seeder
      */
     public function run()
     {
-        Auth::factory()->count(10)->create();
+        Category::factory()->count(10)->create();
     }
 }

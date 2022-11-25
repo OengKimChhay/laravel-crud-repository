@@ -194,7 +194,10 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        Intervention\Image\ImageServiceProvider::class
+
+        // custom providers
+        Intervention\Image\ImageServiceProvider::class,
+        App\Providers\RegisterComponentProvider::class,
     ],
 
     /*

@@ -6,7 +6,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Database\Seeders\AuthSeeder;
 use Database\Seeders\ProductSeeder;
-use App\Modules\Product\Product;
+use Database\Seeders\CategorySeeder;
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -18,7 +18,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AuthSeeder::class,
-            ProductSeeder::class
+            CategorySeeder::class,
+            ProductSeeder::class,
         ]);
     }
 }

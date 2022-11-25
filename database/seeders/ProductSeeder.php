@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Modules\Product\Product;
+use App\Modules\Auth\Auth;
 use Illuminate\Database\Seeder;
 
 class ProductSeeder extends Seeder
@@ -12,7 +13,7 @@ class ProductSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run() 
     {
         Product::factory()->count(100)->create();
     }

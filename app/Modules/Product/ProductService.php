@@ -13,6 +13,7 @@ class ProductService extends CrudRepository
         'name',
         'code',
         'image',
+        'category_id',
         'updated_at',
         'created_at',
         'deleted_at',

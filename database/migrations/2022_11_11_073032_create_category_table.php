@@ -13,14 +13,10 @@ return new class extends Migration
      */
     public function up()
     {
-        CustomSchema::connection()->create('products', function (CustomBlueprint $table) {
+        CustomSchema::connection()->create('category', function (CustomBlueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('code');
-            $table->string('image');
-            $table->foreignId('category_id')->nullable()->constrained('category');
+            $table->string('name')->unique();
             $table->authorField();
-            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -32,6 +28,6 @@ return new class extends Migration
      */
     public function down()
     {
-        CustomSchema::connection()->dropIfExists('products');
+        CustomSchema::connection()->dropIfExists('category');
     }
 };

@@ -8,7 +8,7 @@ class HomeController extends Controller
 {
     public function home()
     {
-        $users = [
+        $users = (object) [
             ['type' => '1'], 
             ['type' => '2'], 
             ['type' => '3'], 

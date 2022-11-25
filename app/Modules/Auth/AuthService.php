@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 class AuthService extends CrudRepository
 {
     protected $tokenName = 'API Personal Access Client';
+    
     protected array $select_fields = [
         'id',
         'name',

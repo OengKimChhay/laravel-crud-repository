@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Modules\Auth;
+namespace App\Modules\Category;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-
-class AuthResource extends JsonResource
+use App\Modules\Auth\AuthResource;
+use App\Modules\Product\ProductResource;
+class CategoryResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,8 +17,8 @@ class AuthResource extends JsonResource
     {
         return [
             'name' => $this->name,
-            'email' => $this->email,
-            'products' => $this->whenLoaded('products'),
+            'creator' => new AuthResource($this->whenLoaded('creator')),
+            'products' => new ProductResource($this->whenLoaded('products')),
             'productCount' => $this->whenCounted('products')
         ];
     }

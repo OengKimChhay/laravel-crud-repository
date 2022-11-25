@@ -7,7 +7,14 @@
     <title>Document</title>
 </head>
 <body>
-    <p>Parent</p>
-    @yield('content')
+    <h1>Hello From other side</h1>
+    <p>
+        This is a layout.
+    </p>
+
+    <div style="border: 1px solid black; padding:30px;">
+
+        @yield('content')
+    </div>
 </body>
 </html>

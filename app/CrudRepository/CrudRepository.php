@@ -17,6 +17,12 @@ class CrudRepository
     protected array $select_fields = [];
 
     /**
+     * declare relations 
+     * @var array
+     */
+    protected array $allowRelations = [];
+
+    /**
      * the instance of model.
      * @var Model
      */
@@ -52,36 +58,119 @@ class CrudRepository
     }
 
     /**
+     * @param string $field
+     * @param mixed $value
+     * @param string $operator
+     * @return callable
+     */
+    private function buildFiltersQuery(string $field, mixed $value, string $operator): callable
+    {
+        return function (Builder $query) use ($field, $value, $operator) {
+            if ($value && $operator === '=') {
+                return $query->where($field, $value);
+            }
+
+            if ($value && $operator === 'like') {
+                return $query->where($field, 'LIKE', '%' . $value . '%');
+            }
+
+            if ($value && (is_array($value) && $operator === 'in')) {
+                return $query->whereIn($field, $value);
+            }
+
+            if ($value && (is_array($value) && $operator === 'between')) {
+                return $query->whereBetween($field, $value);
+            }
+
+            if ($value && $operator === 'date') {
+                return $query->whereDate($field, $value);
+            }
+        };
+    }
+
+    /**
+     * Create relation models filter query
+     *
+     * @param string $field
+     * @param mixed $value
+     * @param string $operator
+     * @return callable of query build
+     */
+    public function whereRelationFields(string $field, mixed $value, string $operator)
+    {
+        return function (Builder $query) use ($field, $value, $operator) {
+            $data = explode('.', $field); // break string to array
+
+
+            // if between 2 relations
+            if (count($data) === 2) {
+                $relation = $data[0];
+                $relationField = $data[1];
+
+                if ($this->isRelationExist($relation)) {
+                    if ($operator === 'not_has') {
+                        return $query->whereDoesntHave($relation);
+                    }
+                    return $query->whereHas($relation, $this->buildFiltersQuery($relationField, $value, $operator));
+                }
+            }
+
+            // if between 3 relations
+            if (count($data) === 3) {
+
+                $relation = $data[0] . '.' . $data[1]; // ex: like relation book.creator ...
+                $relationField = $data[2];
+                if ($this->isRelationExist($relation)) {
+                    if ($operator === 'not_has') {
+                        return $query->whereDoesntHave($relation);
+                    }
+                    return $query->whereHas($relation, $this->buildFiltersQuery($relationField, $value, $operator));
+                }
+            }
+        };
+    }
+
+
+    /**
+     * Check if field is relation field
+     *
+     * @param string $field
+     * @return bool
+     */
+    private function isRelationField(string $field): bool
+    {
+        return strpos($field, '.') !== false;
+    }
+
+
+    /**
+     * Check if field is relation field
+     *
+     * @param string $field
+     * @return bool
+     */
+    private function isRelationExist(string $relation): bool
+    {
+        return $this->model->has($relation)->count() > 0 ? true : false;
+    }
+
+
+    /**
      * @param array $filters
      * @return callable
      */
     public function filters($filters): callable
-    { 
+    {
         return function (Builder $query) use ($filters) {
-            $query->where(function (Builder $query) use ($filters) {
-                foreach ($filters as $filter) {
-                    ['field' => $field, 'value' => $value, 'operator' => $operator] = $filter;
-                    if ($value && $operator === '=') {
-                        $query->where($field, $value);
-                    }
+            foreach ($filters as $filter) {
+                ['field' => $field, 'value' => $value, 'operator' => $operator] = $filter;
 
-                    if ($value && $operator === 'like') {
-                        $query->where($field, 'LIKE', '%'. $value. '%');
-                    }
-
-                    if ($value && (is_array($value) && $operator === 'in')) {
-                        $query->whereIn($field, $value);
-                    }
-
-                    if ($value && (is_array($value) && $operator === 'between')) {
-                        $query->whereBetween($field, $value);
-                    }
-
-                    if ($value && $operator === 'date') {
-                        $query->whereDate($field, $value);
-                    }
-                }
-            });
+                $query->where(
+                    $this->isRelationField($field)
+                        ? $this->whereRelationFields($field, $value, $operator)
+                        : $this->buildFiltersQuery($field, $value, $operator)
+                );
+            }
         };
     }
 
@@ -91,13 +180,14 @@ class CrudRepository
      * @return callable
      */
     public function sorts($sorts): callable
-    { 
+    {
         return function (Builder $query) use ($sorts) {
             foreach ($sorts as $field => $sort) {
                 $query->orderBy($field, $sort);
             }
         };
     }
+
 
     /**
      * build query before get data from database.
@@ -111,7 +201,7 @@ class CrudRepository
         $countRelations = $request['count_relations'] ?? [];
         $relations      = $request['relations'] ?? [];
         $sorts          = $request['sorts'] ?? [];
-        
+
         return $this->model
             ->select($this->getSelectFields($select_fields))
             ->when(!empty($filters), $this->filters($filters))
@@ -176,7 +266,7 @@ class CrudRepository
      */
     public function getManyById(array $ids, array $request = []): Collection
     {
-        return $this->buildQuery($request)->whereIn($this->getPrimaryKeyName(),$ids)->get();
+        return $this->buildQuery($request)->whereIn($this->getPrimaryKeyName(), $ids)->get();
     }
 
     /**
@@ -257,7 +347,7 @@ class CrudRepository
         return $this->getOneOrFail($id)->forceDelete();
     }
 
-     /**
+    /**
      * force destroy many data by ids
      * @param array $ids
      * @return bool
@@ -277,7 +367,7 @@ class CrudRepository
         return $this->getOneOnlyTrash($id)->restore();
     }
 
-     /**
+    /**
      * restore many data by ids
      * @param array $ids
      * @return bool
